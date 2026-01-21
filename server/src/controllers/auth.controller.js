@@ -32,9 +32,9 @@ export const register = asyncHandler(async (req, res) => {
     const expectedSecret = process.env.ADMIN_SECRET?.trim();
 
     if (!expectedSecret) {
-      return res.status(500).json(
-        new ApiResponse(false, "ADMIN_SECRET not configured in server .env")
-      );
+      return res
+        .status(500)
+        .json(new ApiResponse(false, "ADMIN_SECRET not configured in server .env"));
     }
 
     if (!adminSecret || adminSecret.trim() !== expectedSecret) {
@@ -52,7 +52,13 @@ export const register = asyncHandler(async (req, res) => {
   });
 
   const token = signToken(user);
-  return res.status(201).json(new ApiResponse(true, "Registered successfully", { token, user }));
+
+ 
+  const safeUser = await User.findById(user._id).select("-passwordHash");
+
+  return res
+    .status(201)
+    .json(new ApiResponse(true, "Registered successfully", { token, user: safeUser }));
 });
 
 export const login = asyncHandler(async (req, res) => {
@@ -62,14 +68,19 @@ export const login = asyncHandler(async (req, res) => {
     return res.status(400).json(new ApiResponse(false, "Email and password are required"));
   }
 
-  const user = await User.findOne({ email });
+ 
+  const user = await User.findOne({ email }).select("+passwordHash");
   if (!user) return res.status(400).json(new ApiResponse(false, "Invalid credentials"));
 
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) return res.status(400).json(new ApiResponse(false, "Invalid credentials"));
 
   const token = signToken(user);
-  return res.status(200).json(new ApiResponse(true, "Login successful", { token, user }));
+
+  // ✅ safe user object (without passwordHash)
+  const safeUser = await User.findById(user._id).select("-passwordHash");
+
+  return res.status(200).json(new ApiResponse(true, "Login successful", { token, user: safeUser }));
 });
 
 export const me = asyncHandler(async (req, res) => {
