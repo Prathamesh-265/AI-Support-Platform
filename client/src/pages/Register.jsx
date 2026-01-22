@@ -19,9 +19,25 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
 
   
+  const DEMO_ADMIN_SECRET = "prathamesh_admin_2026";
+
+ 
+  const [copied, setCopied] = useState(false);
+
+ 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const copySecret = async () => {
+    try {
+      await navigator.clipboard.writeText(DEMO_ADMIN_SECRET);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1400);
+    } catch {
+      setErr("Failed to copy admin secret. Please copy manually.");
+    }
   };
 
   const submit = async (e) => {
@@ -49,7 +65,7 @@ export default function Register() {
         role: mode,
       };
 
-      if (mode === "admin") payload.adminSecret = form.adminSecret;
+      if (mode === "admin") payload.adminSecret = form.adminSecret.trim();
 
       const res = await registerUser(payload);
       if (!res.success) throw new Error(res.message);
@@ -93,7 +109,10 @@ export default function Register() {
         <div className="mt-5 grid grid-cols-2 gap-2 p-1 rounded-2xl bg-white/5 border border-white/10">
           <button
             type="button"
-            onClick={() => setMode("user")}
+            onClick={() => {
+              setMode("user");
+              setForm((prev) => ({ ...prev, adminSecret: "" }));
+            }}
             className={[
               "rounded-2xl px-4 py-2 text-sm font-medium transition",
               mode === "user"
@@ -106,7 +125,11 @@ export default function Register() {
 
           <button
             type="button"
-            onClick={() => setMode("admin")}
+            onClick={() => {
+              setMode("admin");
+              
+             
+            }}
             className={[
               "rounded-2xl px-4 py-2 text-sm font-medium transition",
               mode === "admin"
@@ -148,8 +171,32 @@ export default function Register() {
             onChange={handleChange}
           />
 
+          
           {mode === "admin" && (
             <div className="space-y-2">
+              <div className="rounded-2xl bg-white/5 border border-white/10 px-4 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-slate-100">
+                      Demo Admin Secret
+                    </div>
+                    
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={copySecret}
+                    className="shrink-0 rounded-xl px-3 py-2 text-xs font-semibold bg-white/10 border border-white/10 hover:bg-white/15 transition"
+                  >
+                    {copied ? "Copied ✅" : "Copy"}
+                  </button>
+                </div>
+
+                <div className="mt-3 rounded-xl px-3 py-2 text-xs font-mono bg-black/30 border border-white/10 text-slate-200 overflow-x-auto">
+                  {DEMO_ADMIN_SECRET}
+                </div>
+              </div>
+
               <input
                 name="adminSecret"
                 type="password"
@@ -159,8 +206,9 @@ export default function Register() {
                 value={form.adminSecret}
                 onChange={handleChange}
               />
+
               <p className="text-xs text-slate-500 leading-relaxed">
-                Admin registration requires a secret configured
+                Tip: Leave it as default for demo or replace with your own secret.
               </p>
             </div>
           )}
